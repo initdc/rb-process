@@ -1,10 +1,17 @@
 # frozen_string_literal: true
 
+require "multi_io"
 require_relative "process/version"
 
 module Process
-  def self.run(*args, **options)
+  def self.run(*args, log_file: nil, **options)
+    if log_file && !log_file.is_a?(File)
+      raise ArgumentError.new("log_file must be a File with mode")
+    end
+
+    mio = log_file ? MultiIO.new($stdout, log_file) : $stdout
     result = String.new
+
     IO.popen(*args, **options) do |pipe|
       if block_given?
         yield pipe
@@ -12,10 +19,12 @@ module Process
       end
       while !pipe.eof
         line = pipe.gets
-        print line
+        mio.write(line)
         result << line
       end
     end
+
+    log_file.close if log_file
     result
   end
 

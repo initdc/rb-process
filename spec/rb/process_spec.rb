@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "tempfile"
+
 RSpec.describe Process do
   it "has a version number" do
     expect(Process::VERSION).not_to be nil
@@ -27,5 +29,13 @@ RSpec.describe Process do
 
   it "answer with cmd with ruby style" do
     expect(Process.run("bash", "r+") { |pipe| pipe.puts "uname" }).to eq "Linux\n"
+  end
+
+  it "print and also log to file" do
+    tempfile = Tempfile.new(["test_", ".log"])
+    Process.run("uname", log_file: File.open(tempfile.path, "w"))
+
+    expect(tempfile.readlines).to eq ["Linux\n"]
+    tempfile.delete
   end
 end
