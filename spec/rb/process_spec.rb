@@ -45,6 +45,8 @@ RSpec.describe Process do
   end
 
   it "answer with cmd with ruby style" do
+    expect(Process.run("bash") { |pipe| pipe.input.puts "uname" }).to eq "Linux\n"
+    expect(Process.run("bash") { |i, _o| i.puts "uname" }).to eq "Linux\n"
     expect(Process.run("bash") { |i, _o, _e| i.puts "uname" }).to eq "Linux\n"
   end
 

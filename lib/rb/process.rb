@@ -5,7 +5,19 @@ require "stringio"
 require_relative "process/version"
 
 module Process
-  def self.run(*args, output: STDOUT, error: STDERR, **options)
+  class Pipe
+    attr_reader :input
+    attr_reader :output
+    attr_reader :error
+
+    def initialize(input, output, error)
+      @input = input
+      @output = output
+      @error = error
+    end
+  end
+
+  def self.run(*args, output: STDOUT, error: STDERR, **options, &block)
     output_strio = StringIO.new
     error_strio = StringIO.new
 
@@ -34,14 +46,23 @@ module Process
 
     if block_given?
       begin
-        yield in_w, out_r, err_r
+        case block.arity
+        when 1
+          yield Pipe.new(in_w, out_r, err_r)
+        when 2
+          yield in_w, out_r
+        when 3
+          yield in_w, out_r, err_r
+        else
+          raise ArgumentError.new("block must take 1 to 3 arguments")
+        end
       rescue StandardError => e
         Process.detach(pid)
         raise e
       end
     end
 
-    in_w.close
+    in_w.close unless in_w.closed?
     out_w.close
     err_w.close
 
