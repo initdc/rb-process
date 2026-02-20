@@ -25,10 +25,9 @@ RSpec.describe Process do
     when String
       expect(r.chomp).to eq "good"
     else
-      o, e, s = r
-      expect(o.chomp).to eq "good"
-      expect(e.chomp).to eq "bad"
-      expect(s.exitstatus).to eq 1
+      expect(r.stdout.chomp).to eq "good"
+      expect(r.stderr.chomp).to eq "bad"
+      expect(r.status.exitstatus).to eq 1
     end
   end
 

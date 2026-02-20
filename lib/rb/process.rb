@@ -17,6 +17,18 @@ module Process
     end
   end
 
+  class Err
+    attr_reader :stdout
+    attr_reader :stderr
+    attr_reader :status
+
+    def initialize(stdout, stderr, status)
+      @stdout = stdout
+      @stderr = stderr
+      @status = status
+    end
+  end
+
   def self.run(*args, output: STDOUT, error: STDERR, **options, &block)
     output_strio = StringIO.new
     error_strio = StringIO.new
@@ -89,7 +101,7 @@ module Process
     when true
       output_strio.string
     else
-      [output_strio.string, error_strio.string, status]
+      Err.new(output_strio.string, error_strio.string, status)
     end
   end
 
