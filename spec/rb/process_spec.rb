@@ -12,7 +12,10 @@ RSpec.describe Process do
   end
 
   it "get command output but also print" do
-    expect(Process.run("uname")).to eq "Linux\n"
+    r = Process.run("uname")
+    expect(r.success?).to eq true
+    expect(r.ok?).to eq true
+    expect(r.stdout).to eq "Linux\n"
   end
 
   it "get the output and not print" do
@@ -28,12 +31,14 @@ RSpec.describe Process do
   end
 
   it "answer with cmd with ruby style" do
-    expect(Process.run("bash", "r+") { |pipe| pipe.puts "uname" }).to eq "Linux\n"
+    expect(Process.run("bash") { |pipe| pipe.puts "uname" }.stdout).to eq "Linux\n"
   end
 
   it "print and also log to file" do
     tempfile = Tempfile.new(["test_", ".log"])
-    Process.run("uname", log_file: File.open(tempfile.path, "w"))
+    File.open(tempfile.path, "w") do |io|
+      Process.run("uname", out: io)
+    end
 
     expect(tempfile.readlines).to eq ["Linux\n"]
     tempfile.delete

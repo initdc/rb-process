@@ -12,3 +12,6 @@ Metrics/AbcSize:
 
 Style/ConditionalAssignment:
   Enabled: false
+
+Style/RaiseArgs:
+  Enabled: false

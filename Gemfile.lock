@@ -11,7 +11,6 @@ GEM
     json (2.15.2)
     language_server-protocol (3.17.0.5)
     lint_roller (1.1.0)
-    multi_io (0.0.1.pre2)
     parallel (1.27.0)
     parser (3.3.10.0)
       ast (~> 2.4.1)
@@ -59,7 +58,6 @@ PLATFORMS
 
 DEPENDENCIES
   bundler (~> 2.4)
-  multi_io (~> 0.0.1.pre2)
   rake (~> 13.0)
   rb-process!
   rspec (~> 3.0)
