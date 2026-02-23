@@ -16,6 +16,18 @@ module Process
       @status = status
     end
 
+    def method_missing(name, *args, &block)
+      @status.send(name, *args, &block)
+    end
+
+    def respond_to_missing?(name, include_private = false)
+      super || @status.respond_to?(name, include_private)
+    end
+
+    def exit_code
+      status.exitstatus
+    end
+
     def success?
       status.success?
     end

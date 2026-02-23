@@ -15,6 +15,8 @@ class IO
   class Stapled
     # If `#sync_close?` is `true`, closing this `IO` will close the underlying `IO`s.
     attr_accessor :sync_close
+    attr_reader :reader
+    attr_reader :writer
 
     # Returns `true` if this `IO` is closed.
     #
@@ -22,6 +24,15 @@ class IO
     attr_reader :closed
 
     @closed = false
+
+    WRITER_DELEGATE = %w[
+      <<
+    ].freeze
+
+    READER_DELEGATE = %w[
+      eof
+      eof?
+    ].freeze
 
     alias_method :sync_close?, :sync_close
     alias_method :closed?, :closed
@@ -33,53 +44,30 @@ class IO
       @sync_close = sync_close
     end
 
-    def read(...)
-      check_open
-
-      @reader.read(...)
+    def method_missing(name, *args, &block)
+      if write_methods?(name.to_s)
+        check_open
+        @writer.send(name, *args, &block)
+      elsif read_methods?(name.to_s)
+        check_open
+        @reader.send(name, *args, &block)
+      else
+        super
+      end
     end
 
-    def readlines(...)
-      check_open
-
-      @reader.readlines(...)
+    def respond_to_missing?(name, include_private = false)
+      super || write_methods?(name.to_s) || read_methods?(name.to_s)
     end
 
-    def each_line(...)
-      check_open
-
-      @reader.each_line(...)
+    def write_methods?(name)
+      name.include?("put") || name.include?("prin") ||
+        name.include?("write") || WRITER_DELEGATE.include?(name)
     end
 
-    # Gets a string from `reader`.
-    def gets(...)
-      check_open
-
-      @reader.gets(...)
-    end
-
-    def puts(...)
-      check_open
-
-      @writer.puts(...)
-    end
-
-    def print(...)
-      check_open
-
-      @writer.print(...)
-    end
-
-    def printf(...)
-      check_open
-
-      @writer.print(...)
-    end
-
-    def write(...)
-      check_open
-
-      @writer.write(...)
+    def read_methods?(name)
+      name.include?("get") || name.include?("read") ||
+        name.include?("each") || READER_DELEGATE.include?(name)
     end
 
     # Flushes `writer`.
@@ -89,6 +77,14 @@ class IO
       @writer.flush
 
       self
+    end
+
+    def close_write
+      @writer.close
+    end
+
+    def close_read
+      @reader.close
     end
 
     # Closes this `IO`.
@@ -103,14 +99,6 @@ class IO
         @reader.close
         @writer.close
       end
-    end
-
-    def close_write
-      @writer.close
-    end
-
-    def close_read
-      @reader.close
     end
 
     protected def check_open

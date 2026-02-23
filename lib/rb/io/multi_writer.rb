@@ -15,6 +15,7 @@ class IO
     # If `#sync_close?` is `true`, closing this `IO` will close all of the underlying
     # IOs.
     attr_accessor :sync_close
+    attr_accessor :writers
     attr_reader :closed
 
     @closed = false

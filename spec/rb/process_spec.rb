@@ -16,6 +16,8 @@ RSpec.describe Process do
     expect(r.success?).to eq true
     expect(r.ok?).to eq true
     expect(r.stdout).to eq "Linux\n"
+    expect(r.exit_code).to eq 0
+    expect(r.pid).to eq r.status.pid
   end
 
   it "get the output and not print" do
@@ -42,5 +44,30 @@ RSpec.describe Process do
 
     expect(tempfile.readlines).to eq ["Linux\n"]
     tempfile.delete
+  end
+
+  # https://devdocs.io/ruby~3.4/io#class-IO-label-Reading
+  it "responds to methods" do
+    Process.run("bash", out: File.open(File::NULL, "r+")) do |pipe|
+      pipe.write_nonblock("echo")
+      pipe << " "
+      pipe.write("hello ")
+      pipe.print("w")
+      pipe.printf("%s", "o")
+      pipe.putc "r"
+      pipe.write("l")
+      pipe.puts "d"
+      pipe.close_write
+
+      pipe.getbyte
+      pipe.getc
+      pipe.readbyte
+      pipe.readchar
+      pipe.readpartial(1)
+      pipe.readline
+      pipe.readlines
+      pipe.gets
+      pipe.read
+    end
   end
 end
