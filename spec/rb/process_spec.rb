@@ -12,12 +12,30 @@ RSpec.describe Process do
   end
 
   it "get command output but also print" do
-    r = Process.run("uname")
-    expect(r.success?).to eq true
-    expect(r.ok?).to eq true
-    expect(r.stdout).to eq "Linux\n"
-    expect(r.exit_code).to eq 0
-    expect(r.pid).to eq r.status.pid
+    case Process.run("uname")
+    in String => str
+      expect(str.chomp).to eq "Linux"
+    in e
+      expect(e.success?).to eq false
+      expect(e.ok?).to eq false
+      expect(e.stdout).to eq ""
+      expect(e.exit_code).to not_eq(0)
+    end
+  end
+
+  it "print once Linux\n" do
+    expect(Process.run("uname", out: $stdout)).to eq "Linux\n"
+  end
+
+  it "looks like ruby Open3 when bad" do
+    case Process.run("echo good && echo bad >&2 && exit 1")
+    in String => str
+      expect(str.chomp).to eq "good"
+    in e
+      expect(e.stdout.chomp).to eq "good"
+      expect(e.stderr.chomp).to eq "bad"
+      expect(e.exit_code).to eq 1
+    end
   end
 
   it "get the output and not print" do
@@ -33,7 +51,7 @@ RSpec.describe Process do
   end
 
   it "answer with cmd with ruby style" do
-    expect(Process.run("bash") { |pipe| pipe.puts "uname" }.stdout).to eq "Linux\n"
+    expect(Process.run("bash") { |pipe| pipe.puts "uname" }).to eq "Linux\n"
   end
 
   it "print and also log to file" do

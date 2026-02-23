@@ -5,7 +5,7 @@ require_relative "io"
 require_relative "process/version"
 
 module Process
-  class Result
+  class Err
     attr_reader :stdout
     attr_reader :stderr
     attr_reader :status
@@ -84,7 +84,11 @@ module Process
     end
 
     pid, status = Process.wait2(pid)
-    Result.new(output_strio.string, error_strio.string, status)
+    if status.success?
+      output_strio.string
+    else
+      Err.new(output_strio.string, error_strio.string, status)
+    end
   end
 
   def self.output(...)
