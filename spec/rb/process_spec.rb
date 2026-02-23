@@ -11,6 +11,10 @@ RSpec.describe Process do
     Process.run("sudo apt update")
   end
 
+  it "support $stdin when no block given" do
+    Process.run("uname", in: $stdin)
+  end
+
   it "get command output but also print" do
     case Process.run("uname")
     in String => str

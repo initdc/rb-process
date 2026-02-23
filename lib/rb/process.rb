@@ -36,23 +36,25 @@ module Process
   end
 
   def self.run(*args, out: $stdout, err: $stderr, **options)
-    in_r, in_w = IO.pipe
-    in_w.sync = true
     out_r, out_w = IO.pipe
     err_r, err_w = IO.pipe
-
-    child_io = [in_r, out_w, err_w]
-    parent_io = [in_w, out_r, err_r]
+    child_io = [out_w, err_w]
+    parent_io = [out_r, err_r]
 
     output_strio = StringIO.new
     error_strio  = StringIO.new
     output_writter = IO::MultiWriter.new(out, output_strio)
     error_writter = IO::MultiWriter.new(err, error_strio)
 
-    pid = Process.spawn(*args, **options, in: in_r, out: out_w, err: err_w)
-    child_io.each(&:close)
-
     if block_given?
+      in_r, in_w = IO.pipe
+      in_w.sync = true
+      child_io << in_r
+      parent_io << in_w
+
+      pid = Process.spawn(*args, **options, in: in_r, out: out_w, err: err_w)
+      child_io.each(&:close)
+
       pipe = IO::Stapled.new(out_r, in_w)
       begin
         yield pipe
@@ -60,6 +62,9 @@ module Process
         in_w.close unless in_w.closed?
         pipe.close
       end
+    else
+      pid = Process.spawn(*args, **options, out: out_w, err: err_w)
+      child_io.each(&:close)
     end
 
     t1 = Thread.new do
