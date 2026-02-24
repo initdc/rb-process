@@ -36,46 +36,46 @@ module Process
   end
 
   def self.run(*args, out: $stdout, err: $stderr, **options)
-    out_r, out_w = IO.pipe
-    err_r, err_w = IO.pipe
-    child_io = [out_w, err_w]
-    parent_io = [out_r, err_r]
+    stdout_reader, stdout_writer  = IO.pipe
+    stderr_reader, stderr_writer  = IO.pipe
+    childs_io = [stdout_writer, stderr_writer]
+    parent_io = [stdout_reader, stderr_reader]
 
-    output_strio = StringIO.new
-    error_strio  = StringIO.new
-    output_writter = IO::MultiWriter.new(out, output_strio)
-    error_writter = IO::MultiWriter.new(err, error_strio)
+    out_strio = StringIO.new
+    err_strio = StringIO.new
+    out_multiwriter = IO::MultiWriter.new(out, out_strio)
+    err_multiwriter = IO::MultiWriter.new(err, err_strio)
 
     if block_given?
-      in_r, in_w = IO.pipe
-      in_w.sync = true
-      child_io << in_r
-      parent_io << in_w
+      stdin_reader, stdin_writer = IO.pipe
+      stdin_writer.sync = true
+      childs_io << stdin_reader
+      parent_io << stdin_writer
 
-      pid = Process.spawn(*args, **options, in: in_r, out: out_w, err: err_w)
-      child_io.each(&:close)
+      pid = Process.spawn(*args, **options, in: stdin_reader, out: stdout_writer, err: stderr_writer)
+      childs_io.each(&:close)
 
-      pipe = IO::Stapled.new(out_r, in_w)
+      pipe = IO::Stapled.new(stdout_reader, stdin_writer)
       begin
         yield pipe
       ensure
-        in_w.close unless in_w.closed?
+        stdin_writer.close unless stdin_writer.closed?
         pipe.close
       end
     else
-      pid = Process.spawn(*args, **options, out: out_w, err: err_w)
-      child_io.each(&:close)
+      pid = Process.spawn(*args, **options, out: stdout_writer, err: stderr_writer)
+      childs_io.each(&:close)
     end
 
     t1 = Thread.new do
-      out_r.each_line do |line|
-        output_writter.write(line)
+      stdout_reader.each_line do |line|
+        out_multiwriter.write(line)
       end
     end
 
     t2 = Thread.new do
-      err_r.each_line do |line|
-        error_writter.write(line)
+      stderr_reader.each_line do |line|
+        err_multiwriter.write(line)
       end
     end
 
@@ -83,16 +83,16 @@ module Process
       t1.join
       t2.join
     ensure
-      output_writter.close
-      error_writter.close
+      out_multiwriter.close
+      err_multiwriter.close
       parent_io.each { |io| io.close unless io.closed? }
     end
 
     pid, status = Process.wait2(pid)
     if status.success?
-      output_strio.string
+      out_strio.string
     else
-      Err.new(output_strio.string, error_strio.string, status)
+      Err.new(out_strio.string, err_strio.string, status)
     end
   end
 
