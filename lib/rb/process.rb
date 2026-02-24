@@ -35,7 +35,7 @@ module Process
     alias_method :ok?, :success?
   end
 
-  def self.run(*args, out: $stdout, err: $stderr, **options)
+  def self.run(*args, out: $stdout, err: $stderr, exception: false, **options)
     stdout_reader, stdout_writer  = IO.pipe
     stderr_reader, stderr_writer  = IO.pipe
     childs_io = [stdout_writer, stderr_writer]
@@ -90,10 +90,27 @@ module Process
 
     pid, status = Process.wait2(pid)
     Result.new(out_strio.string, err_strio.string, status)
+  rescue Errno::ENOENT => e
+    raise e if exception
+
+    Result.new(nil, nil, $?)
   end
 
-  def self.output(...)
-    IO.popen(...).read
+  def self.output(*args, **options)
+    stdout_reader, stdout_writer = IO.pipe
+    pid = Process.spawn(*args, **options, out: stdout_writer)
+    stdout_writer.close
+
+    pid, status = Process.wait2(pid)
+    if status.exited? && status.success?
+      stdout_reader.read
+    else
+      nil
+    end
+  rescue Errno::ENOENT
+    nil
+  ensure
+    stdout_reader.close
   end
 
   def self.code(...)

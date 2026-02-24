@@ -24,8 +24,17 @@ RSpec.describe Process do
     expect(r.pid).to eq r.status.pid
   end
 
+  it "not raise by default when Errno::ENOENT" do
+    expect { Process.run("unamea") }.not_to raise_error
+    expect { Process.run("unamea", exception: true) }.to raise_error
+  end
+
   it "get the output and not print" do
     expect(Process.output("uname").chomp).to eq "Linux"
+  end
+
+  it "return nil when exec not success" do
+    expect(Process.output("unamea")).to be_nil
   end
 
   it "get array by method chaining" do
