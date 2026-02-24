@@ -17,11 +17,11 @@ module Process
     end
 
     def method_missing(name, *args, &block)
-      @status.send(name, *args, &block)
+      @status.respond_to?(name) ? @status.send(name, *args, &block) : super
     end
 
     def respond_to_missing?(name, include_private = false)
-      super || @status.respond_to?(name, include_private)
+      @status.respond_to?(name, include_private) || super
     end
 
     def exit_code

@@ -18,12 +18,11 @@ class IO
     attr_accessor :writers
     attr_reader :closed
 
-    @closed = false
-
     alias_method :sync_close?, :sync_close
     alias_method :closed?, :closed
 
     def initialize(*writers, sync_close: false)
+      @closed = false
       @writers = writers
       @sync_close = sync_close
     end

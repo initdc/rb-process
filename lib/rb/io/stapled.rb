@@ -23,32 +23,25 @@ class IO
     # Underlying `IO`s might have a different status.
     attr_reader :closed
 
-    @closed = false
-
-    WRITER_DELEGATE = %w[
-      <<
-    ].freeze
-
-    READER_DELEGATE = %w[
-      eof
-      eof?
-    ].freeze
+    WRITER_DELEGATE = IO.instance_methods.grep(/^put|^print|write|<</).freeze
+    READER_DELEGATE = IO.instance_methods.grep(/^get[a-z]*|read|each|eof/).freeze
 
     alias_method :sync_close?, :sync_close
     alias_method :closed?, :closed
 
     # Creates a new `IO::Stapled` which reads from *reader* and writes to *writer*.
     def initialize(reader, writer, sync_close: false)
+      @closed = false
       @reader = reader
       @writer = writer
       @sync_close = sync_close
     end
 
     def method_missing(name, *args, &block)
-      if write_methods?(name.to_s)
+      if WRITER_DELEGATE.include?(name)
         check_open
         @writer.send(name, *args, &block)
-      elsif read_methods?(name.to_s)
+      elsif READER_DELEGATE.include?(name)
         check_open
         @reader.send(name, *args, &block)
       else
@@ -57,17 +50,7 @@ class IO
     end
 
     def respond_to_missing?(name, include_private = false)
-      super || write_methods?(name.to_s) || read_methods?(name.to_s)
-    end
-
-    def write_methods?(name)
-      name.include?("put") || name.include?("prin") ||
-        name.include?("write") || WRITER_DELEGATE.include?(name)
-    end
-
-    def read_methods?(name)
-      name.include?("get") || name.include?("read") ||
-        name.include?("each") || READER_DELEGATE.include?(name)
+      WRITER_DELEGATE.include?(name) || READER_DELEGATE.include?(name) || super
     end
 
     # Flushes `writer`.
