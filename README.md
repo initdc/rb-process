@@ -17,7 +17,7 @@ If bundler is not being used to manage dependencies, install the gem by executin
 ```ruby
 require "rb/process"
 
-Process.run("bash", "r+") { |pipe| pipe.puts "uname" }
+Process.run("bash") { |pipe| pipe.puts "uname" }
 # => "Linux\n"
 
 Process.output("ls spec").each_line(chomp: true).to_a
