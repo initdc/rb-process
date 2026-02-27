@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    rb-process (0.2.3)
+    rb-process (0.2.4)
 
 GEM
   remote: https://rubygems.org/
