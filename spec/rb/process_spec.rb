@@ -77,6 +77,22 @@ RSpec.describe Process do
     tempfile.delete
   end
 
+  it "write to multi IO" do
+    tempfile1 = Tempfile.new(["test_", ".log"])
+    tempfile2 = Tempfile.new(["test_", ".log"])
+
+    File.open(tempfile1.path, "w") do |io1|
+      File.open(tempfile2.path, "w") do |io2|
+        expect(Process.run("uname", out: [io1, io2]).each_line.to_a).to eq ["Linux\n"]
+      end
+    end
+
+    expect(tempfile1.readlines).to eq ["Linux\n"]
+    expect(tempfile2.readlines).to eq ["Linux\n"]
+    tempfile1.delete
+    tempfile2.delete
+  end
+
   # https://devdocs.io/ruby~3.4/io#class-IO-label-Reading
   it "responds to methods" do
     Process.run("bash", out: File.open(File::NULL, "r+")) do |pipe|
