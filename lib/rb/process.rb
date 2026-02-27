@@ -43,8 +43,8 @@ module Process
 
     out_strio = StringIO.new
     err_strio = StringIO.new
-    out_multiwriter = IO::MultiWriter.new(out, out_strio)
-    err_multiwriter = IO::MultiWriter.new(err, err_strio)
+    out_multiwriter = out.is_a?(Array) ? IO::MultiWriter.new(*out, out_strio) : IO::MultiWriter.new(out, out_strio)
+    err_multiwriter = err.is_a?(Array) ? IO::MultiWriter.new(*err, err_strio) : IO::MultiWriter.new(err, err_strio)
 
     if block_given?
       stdin_reader, stdin_writer = IO.pipe
