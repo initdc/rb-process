@@ -68,14 +68,24 @@ module Process
     end
 
     t1 = Thread.new do
-      stdout_reader.each_line do |line|
-        out_multiwriter.write(line)
+      if stdout_reader.eof?
+        out_strio.close
+        out_strio = nil
+      else
+        stdout_reader.each_line do |line|
+          out_multiwriter.write(line)
+        end
       end
     end
 
     t2 = Thread.new do
-      stderr_reader.each_line do |line|
-        err_multiwriter.write(line)
+      if stderr_reader.eof?
+        err_strio.close
+        err_strio = nil
+      else
+        stderr_reader.each_line do |line|
+          err_multiwriter.write(line)
+        end
       end
     end
 
@@ -89,7 +99,7 @@ module Process
     end
 
     pid, status = Process.wait2(pid)
-    Result.new(out_strio.string, err_strio.string, status)
+    Result.new(out_strio&.string, err_strio&.string, status)
   rescue Errno::ENOENT => e
     raise e if exception
 

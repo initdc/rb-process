@@ -24,6 +24,14 @@ RSpec.describe Process do
     expect(r.pid).to eq r.status.pid
   end
 
+  it "run ok and stdout get nil" do
+    r = Process.run("exit 0")
+    expect(r.ok?).to eq true
+    expect(r.stdout).to be nil
+    expect(r.stderr).to be nil
+    expect(r.exit_code).to eq 0
+  end
+
   it "not raise by default when Errno::ENOENT" do
     expect { Process.run("unamea") }.not_to raise_error
     expect { Process.run("unamea", exception: true) }.to raise_error
