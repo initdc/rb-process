@@ -32,9 +32,21 @@ RSpec.describe Process do
     expect(r.exit_code).to eq 0
   end
 
-  it "not raise by default when Errno::ENOENT" do
+  it "not raise by default when Exception" do
     expect { Process.run("unamea") }.not_to raise_error
-    expect { Process.run("unamea", exception: true) }.to raise_error
+    expect { Process.run("unamea", exception: true) }.to raise_error Errno::ENOENT
+    expect { Process.run("./Rakefile") }.not_to raise_error
+    expect { Process.run("./Rakefile", exception: true) }.to raise_error Errno::EACCES
+    expect { Process.run("bash -c ./Rakefile") }.not_to raise_error
+    expect { Process.run("bash -c ./Rakefile", exception: true) }.not_to raise_error
+    expect { system("bash -c ./Rakefile") }.not_to raise_error
+    expect { system("bash -c ./Rakefile", exception: true) }.to raise_error RuntimeError
+
+    expect { Process.output("unamea") }.not_to raise_error
+    expect { Process.output("unamea", exception: true) }.to raise_error Errno::ENOENT
+
+    expect { Process.output("unamea") }.not_to raise_error
+    expect { Process.output("unamea", exception: true) }.to raise_error Errno::ENOENT
   end
 
   it "get the output and not print" do
