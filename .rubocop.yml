@@ -24,3 +24,6 @@ Style/RaiseArgs:
 
 Style/SpecialGlobalVars:
   EnforcedStyle: use_builtin_english_names
+
+Lint/RescueException:
+  Enabled: false

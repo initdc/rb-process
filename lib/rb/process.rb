@@ -25,11 +25,11 @@ module Process
     end
 
     def exit_code
-      status.exitstatus
+      @status.exitstatus
     end
 
     def success?
-      status.success?
+      @status.success?
     end
 
     alias_method :ok?, :success?
@@ -94,33 +94,37 @@ module Process
     else
       Err.new(out_strio.string, err_strio.string, status)
     end
-  rescue Errno::ENOENT => e
+  rescue Exception => e
     raise e if exception
 
     Err.new(nil, nil, $?)
   end
 
-  def self.output(*args, **options)
+  def self.output(*args, exception: false, **options)
     stdout_reader, stdout_writer = IO.pipe
     pid = Process.spawn(*args, **options, out: stdout_writer)
     stdout_writer.close
 
     pid, status = Process.wait2(pid)
-    if status.exited? && status.success?
+    if status.success?
       stdout_reader.read
     else
       nil
     end
-  rescue Errno::ENOENT
+  rescue Exception => e
+    raise e if exception
+
     nil
   ensure
     stdout_reader.close
   end
 
-  def self.code(...)
-    pid, status = Process.wait2(spawn(...))
+  def self.code(*args, exception: false, **options)
+    pid, status = Process.wait2(spawn(*args, **options))
     status.exitstatus
-  rescue Errno::ENOENT
-    127
+  rescue Exception => e
+    raise e if exception
+
+    $?.exitstatus
   end
 end
